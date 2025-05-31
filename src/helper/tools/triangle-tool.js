@@ -88,8 +88,10 @@ class TriangleTool extends paper.Tool {
             let angle = (i / this.sideCount) * Math.PI * 2;
             let angleIn = angle + (1 / this.sideCount) * Math.PI;
 
-            segs.push(new paper.Point(Math.sin(angle) * 50, -Math.cos(angle) * 50))
-            if (this.pointCount !== 1) {
+            if (this.pointCount !== 2) {
+                segs.push(new paper.Point(Math.sin(angle) * 50, -Math.cos(angle) * 50))
+            }
+            if (this.pointCount !== 0.5) {
                 segs.push(new paper.Point(Math.sin(angleIn) * 50 * this.pointCount, -Math.cos(angleIn) * 50 * this.pointCount));
             }
         }
@@ -100,7 +102,7 @@ class TriangleTool extends paper.Tool {
         // if editing a tri, update the curves
         const oldTri = paper.project.selectedItems[0];
         if (oldTri) {
-            const path = new paper.Path({segments: this.calculateSegments(), closed: true});
+            const path = new paper.Path({ segments: this.calculateSegments(), closed: true });
             path.bounds = oldTri.bounds;
             oldTri.segments = path.segments;
             oldTri.closed = true;
@@ -139,7 +141,7 @@ class TriangleTool extends paper.Tool {
             bounds.size = squareDimensions.size.abs();
         }
 
-        this.tri = new paper.Path({segments: this.calculateSegments(), closed: true});
+        this.tri = new paper.Path({ segments: this.calculateSegments(), closed: true });
         this.tri.bounds = bounds;
         if (event.modifiers.alt) {
             this.tri.position = event.downPoint;
