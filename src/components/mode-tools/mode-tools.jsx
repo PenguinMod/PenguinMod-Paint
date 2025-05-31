@@ -16,6 +16,7 @@ import { changeCurrentlySelectedShape } from '../../reducers/sussy-mode';
 import { changeBitBrushSize } from '../../reducers/bit-brush-size';
 import { changeBitEraserSize } from '../../reducers/bit-eraser-size';
 import { setShapesFilled } from '../../reducers/fill-bitmap-shapes';
+import { setTextAlignment } from '../../reducers/text-alignment';
 
 import FontDropdown from '../../containers/font-dropdown.jsx';
 import LiveInputHOC from '../forms/live-input-hoc.jsx';
@@ -351,11 +352,12 @@ const ModeToolsComponent = props => {
                     <InputGroup
                         className={classNames(
                             styles.modDashedBorder,
-                            // styles.modLabeledIconHeight,
+                            styles.flexCenterer,
                             styles.dropdownMaxItemList
                         )}
                     >
                         {selectableShapes.map(shape => (<LabeledIconButton
+                            className={classNames(styles.dropItemShapeTool)}
                             hideLabel={hideLabel(props.intl.locale)}
                             imgSrc={`data:image/svg+xml,${encodeURIComponent(generateShapeSVG(shape))}`}
                             title={shape.name}
@@ -747,10 +749,6 @@ ModeToolsComponent.propTypes = {
     onPointPoints: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
 
-    onTextAlignLeft: PropTypes.func.isRequired,
-    onTextAlignRight: PropTypes.func.isRequired,
-    onTextAlignCenter: PropTypes.func.isRequired,
-
     onMergeShape: PropTypes.func.isRequired,
     onMaskShape: PropTypes.func.isRequired,
     onSubtractShape: PropTypes.func.isRequired,
@@ -805,7 +803,16 @@ const mapDispatchToProps = dispatch => ({
     },
     onOutlineShapes: () => {
         dispatch(setShapesFilled(false));
-    }
+    },
+    onTextAlignLeft: () => {
+        dispatch(setTextAlignment("left"));
+    },
+    onTextAlignRight: () => {
+        dispatch(setTextAlignment("right"));
+    },
+    onTextAlignCenter: () => {
+        dispatch(setTextAlignment("center"));
+    },
 });
 
 export default connect(
