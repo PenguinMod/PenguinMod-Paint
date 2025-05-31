@@ -331,6 +331,7 @@ class ReshapeTool extends paper.Tool {
         } else if (event.key == 'i' || event.key == 'o') {
 
             const segments = getSelectedSegments();
+            let lenOld = segments[0].path.length;
             for (const seg of segments) {
                 let parent = seg.path;
                 let p = seg.point;
@@ -343,6 +344,12 @@ class ReshapeTool extends paper.Tool {
                 } else {
                     seg.point = p.subtract(n);
                 }
+            }
+            let lenNew = segments[0].path.length;
+
+            for (const seg of segments) {
+                seg.handleIn = seg.handleIn.multiply(lenNew / lenOld);
+                seg.handleOut = seg.handleOut.multiply(lenNew / lenOld);
             }
         }
 
