@@ -44,11 +44,26 @@
     justify-content: center;
 }
 
-.dropItemShapeTool {
+.drop-item-shape-tool-menu {
+    width: 500px;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+.drop-item-shape-tool {
     width: 50px;
     transition: filter 0.3s ease;
     filter: saturate(1);
 }
-.dropItemShapeTool:hover {
+.drop-item-shape-tool:hover {
     filter: saturate(8);
+}
+.drop-item-shape-tool-label {
+    width: 100%;
+    font-size: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+}
+[theme="dark"] .drop-item-shape-tool-label {
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
 }

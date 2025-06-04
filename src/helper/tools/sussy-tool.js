@@ -5,7 +5,7 @@ import { clearSelection } from '../selection';
 import { getSquareDimensions } from '../math';
 import BoundingBoxTool from '../selection-tools/bounding-box-tool';
 import NudgeTool from '../selection-tools/nudge-tool';
-import selectableShapes from '../selectable-shapes';
+import { selectablePaths } from '../selectable-shapes';
 
 /**
  * Tool for drawing sussys.
@@ -107,9 +107,7 @@ class SussyTool extends paper.Tool {
             sussy.size = squareDimensions.size.abs();
         }
 
-        const shapeObject = selectableShapes
-            .filter(shape => shape.id === this.shape)[0];
-        const path = shapeObject.path;
+        const path = selectablePaths[this.shape];
         this.sussy = new paper.CompoundPath(path);
         this.sussy.bounds = sussy;
         if (event.modifiers.alt) {
@@ -133,7 +131,7 @@ class SussyTool extends paper.Tool {
         }
 
         if (this.sussy) {
-            if (this.sussy.area < SussyTool.TOLERANCE / paper.view.zoom) {
+            if (Math.abs(this.sussy.area) < SussyTool.TOLERANCE / paper.view.zoom) {
                 // Tiny sussy created unintentionally?
                 this.sussy.remove();
                 this.sussy = null;

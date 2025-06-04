@@ -8,8 +8,9 @@ import Dropdown from '../dropdown/dropdown.jsx';
 import MediaQuery from 'react-responsive';
 import layout from '../../lib/layout-constants';
 
-import { changeBrushSize, changeSegSize } from '../../reducers/brush-mode';
-import { changeBrushSize as changeEraserSize } from '../../reducers/eraser-mode';
+import { changeBrushSize, changeSimplifySize } from '../../reducers/brush-mode';
+import { changeBrushSize as changeEraserSize, changeSimplifySize as changeEraserSimplifySize } from '../../reducers/eraser-mode';
+import { changeSimplifySize as changePenSimplifySize } from '../../reducers/pen-mode';
 import { changeRoundedRectCornerSize } from '../../reducers/rounded-rect-mode';
 import { changeRoundedCornerSize } from '../../reducers/rect-mode';
 import { changeTrianglePolyCount, changeTrianglePointCount } from '../../reducers/triangle-mode';
@@ -30,6 +31,13 @@ import Modes from '../../lib/modes';
 import Formats, { isBitmap, isVector } from '../../lib/format';
 import { hideLabel } from '../../lib/hide-label';
 import styles from './mode-tools.css';
+import { MAX_STROKE_WIDTH } from '../../reducers/stroke-width';
+import {
+    selectableShapes as sussyToolShapes,
+    categories as sussyToolCategories,
+    generateShapeSVG as generateSussyShapeSVG,
+    categorizeShapes as categorizeSussyShapes,
+} from '../../helper/selectable-shapes.js';
 
 import copyIcon from './icons/copy.svg';
 import cutIcon from './icons/cut.svg';
@@ -40,16 +48,13 @@ import squareLine from './icons/square-line.svg';
 import miterLineJoin from './icons/miter-line-join.svg';
 import roundLineJoin from './icons/round-line-join.svg';
 import bevelLineJoin from './icons/bevel-line-join.svg';
-
 import shapeMergeIcon from './icons/merge.svg';
 import shapeMaskIcon from './icons/mask.svg';
 import shapeSubtractIcon from './icons/subtract.svg';
 import shapeFilterIcon from './icons/filter.svg';
-
 import alignLeftIcon from './icons/alignLeft.svg';
 import alignRightIcon from './icons/alignRight.svg';
 import alignCenterIcon from './icons/alignCenter.svg';
-
 import bitBrushIcon from '../bit-brush-mode/brush.svg';
 import bitEraserIcon from '../bit-eraser-mode/eraser.svg';
 import bitLineIcon from '../bit-line-mode/line.svg';
@@ -68,10 +73,6 @@ import bitRectIcon from '../bit-rect-mode/rectangle.svg';
 import bitOvalOutlinedIcon from '../bit-oval-mode/oval-outlined.svg';
 import bitRectOutlinedIcon from '../bit-rect-mode/rectangle-outlined.svg';
 
-import { MAX_STROKE_WIDTH } from '../../reducers/stroke-width';
-
-import selectableShapes from '../../helper/selectable-shapes.js';
-
 const LiveInput = LiveInputHOC(Input);
 const ModeToolsComponent = props => {
     const messages = defineMessages({
@@ -80,15 +81,20 @@ const ModeToolsComponent = props => {
             description: 'Label for the brush size input',
             id: 'paint.modeTools.brushSize'
         },
-        brushSeg: {
-            defaultMessage: 'Accuracy',
-            description: 'Label for the brush accuracy input',
-            id: 'paint.modeTools.brushSeg'
+        brushSimplify: {
+            defaultMessage: 'Smoothing',
+            description: 'Label for the brush smoothing input, higher numbers control how much the drawn line will be corrected',
+            id: 'paint.modeTools.brushSimplify'
         },
         eraserSize: {
             defaultMessage: 'Eraser size',
             description: 'Label for the eraser size input',
             id: 'paint.modeTools.eraserSize'
+        },
+        eraserSimplify: {
+            defaultMessage: 'Smoothing',
+            description: 'Label for the eraser smoothing input, higher numbers control how much the drawn line will be corrected',
+            id: 'paint.modeTools.eraserSimplify'
         },
         roundedCornerSize: {
             defaultMessage: 'Rounded corner size',
@@ -104,6 +110,11 @@ const ModeToolsComponent = props => {
             defaultMessage: 'Star spoke ratio',
             description: 'Label for the Star spoke ratio input, controls the size of the spokes on a star',
             id: 'paint.modeTools.spikeRatio'
+        },
+        penSimplify: {
+            defaultMessage: 'Smoothing',
+            description: 'Label for the pen smoothing input, higher numbers control how much the drawn line will be corrected',
+            id: 'paint.modeTools.penSimplify'
         },
         copy: {
             defaultMessage: 'Copy',
@@ -177,44 +188,46 @@ const ModeToolsComponent = props => {
                 const currentIcon = isVector(props.format) ? brushIcon :
                     props.mode === Modes.BIT_LINE ? bitLineIcon : bitBrushIcon;
                 const currentBrushValue = isBitmap(props.format) ? props.bitBrushSize : props.brushValue;
-                const currentSegValue = isBitmap(props.format) ? props.bitBrushSize : props.segValue;
+                const currentSimplifyValue = props.simplifyValue;
                 const changeFunction = isBitmap(props.format) ? props.onBitBrushSliderChange : props.onBrushSliderChange;
-                const changeFunctionSeg = isBitmap(props.format) ? props.onBitBrushSliderChange : props.onSegSliderChange;
+                const changeFunctionSimplify = props.onSimplifySliderChange;
                 const currentMessage = props.mode === Modes.BIT_LINE ? messages.thickness : messages.brushSize;
+                const hasSimplifyOption = props.mode === Modes.BRUSH;
                 return (
                     <div className={classNames(props.className, styles.modeTools)}>
                         <div>
                             <img
                                 alt={props.intl.formatMessage(currentMessage)}
+                                title={props.intl.formatMessage(currentMessage)}
                                 className={styles.modeToolsIcon}
                                 draggable={false}
                                 src={currentIcon}
                             />
                         </div>
-                        <Label text={props.intl.formatMessage(messages.brushSize)}>
-                            <LiveInput
-                                range
-                                small
-                                max={MAX_STROKE_WIDTH}
-                                min="1"
-                                type="number"
-                                value={currentBrushValue}
-                                onSubmit={changeFunction}
-                            />
-                        </Label>
-
-                        <Label text={props.intl.formatMessage(messages.brushSeg)}>
                         <LiveInput
                             range
                             small
-                            max={MAX_STROKE_WIDTH * 10}
+                            max={MAX_STROKE_WIDTH}
                             min="1"
                             type="number"
-                            value={currentSegValue}
-                            onSubmit={changeFunctionSeg}
+                            value={currentBrushValue}
+                            onSubmit={changeFunction}
                         />
-                        </Label>
-                    </div >
+                        
+                        {hasSimplifyOption && (
+                            <Label text={props.intl.formatMessage(messages.brushSimplify)}>
+                                <LiveInput
+                                    range
+                                    small
+                                    max={1000}
+                                    min="0"
+                                    type="number"
+                                    value={currentSimplifyValue}
+                                    onSubmit={changeFunctionSimplify}
+                                />
+                            </Label>
+                        )}
+                    </div>
                 );
             }
         case Modes.BIT_ERASER:
@@ -223,12 +236,16 @@ const ModeToolsComponent = props => {
             {
                 const currentIcon = isVector(props.format) ? eraserIcon : bitEraserIcon;
                 const currentEraserValue = isBitmap(props.format) ? props.bitEraserSize : props.eraserValue;
+                const currentEraserSimplifyValue = props.eraserSimplifyValue;
                 const changeFunction = isBitmap(props.format) ? props.onBitEraserSliderChange : props.onEraserSliderChange;
+                const changeFunctionSimplify = props.onEraserSimplifySliderChange;
+                const hasSimplifyOption = props.mode === Modes.ERASER;
                 return (
                     <div className={classNames(props.className, styles.modeTools)}>
                         <div>
                             <img
                                 alt={props.intl.formatMessage(messages.eraserSize)}
+                                title={props.intl.formatMessage(messages.eraserSize)}
                                 className={styles.modeToolsIcon}
                                 draggable={false}
                                 src={currentIcon}
@@ -243,6 +260,20 @@ const ModeToolsComponent = props => {
                             value={currentEraserValue}
                             onSubmit={changeFunction}
                         />
+
+                        {hasSimplifyOption && (
+                            <Label text={props.intl.formatMessage(messages.eraserSimplify)}>
+                                <LiveInput
+                                    range
+                                    small
+                                    max={1000}
+                                    min="0"
+                                    type="number"
+                                    value={currentEraserSimplifyValue}
+                                    onSubmit={changeFunctionSimplify}
+                                />
+                            </Label>
+                        )}
                     </div>
                 );
             }
@@ -328,57 +359,33 @@ const ModeToolsComponent = props => {
             {
                 const currentlySelectedShape = props.currentlySelectedShape;
                 const changeFunction = props.onCurrentlySelectedShapeChange;
-                const selectedShapeObject = selectableShapes
+                const selectedShapeObject = sussyToolShapes
                     .filter(shape => shape.id === currentlySelectedShape)[0];
-                const generateShapeSVG = shapeObject => {
-                    const strokeColor = '#575e75';
-                    const icon = shapeObject.icon;
-                    // extract viewbox
-                    const viewBoxStart = icon.substring(icon.indexOf('viewBox="') + 9);
-                    const viewBoxString = viewBoxStart
-                        .substring(0, viewBoxStart.indexOf('"'));
-                    // extract fill color
-                    const fillColorStart = icon.substring(icon.indexOf('fill="') + 6);
-                    const fillColorString = fillColorStart
-                        .substring(0, fillColorStart.indexOf('"'));
-                    // extract stroke width
-                    const strokeWidthStart = icon.substring(icon.indexOf('stroke-width="') + 14);
-                    const strokeWidthString = strokeWidthStart
-                        .substring(0, strokeWidthStart.indexOf('"'));
-                    // extract viewbox to array
-                    const viewBox = viewBoxString
-                        .replace(/ /gmi, ',')
-                        .split(',')
-                        .map(value => value.trim())
-                        .map(num => Number(num));
-                    const newViewBox = [
-                        viewBox[0] - 1.5,
-                        viewBox[1] - 1.5,
-                        viewBox[2] + (1.5 * 2),
-                        viewBox[3] + (1.5 * 2)
-                    ].join(',');
-                    const newIcon = icon
-                        .replace(`viewBox="${viewBoxString}"`, `viewBox="${newViewBox}"`)
-                        .replace('stroke="none"', `stroke="${strokeColor}"`)
-                        .replace(`fill="${fillColorString}"`, 'fill="none"')
-                        .replace(`stroke-width="${strokeWidthString}"`, `stroke-width="${shapeObject.strokeWidth}"`);
-                    return `${newIcon}`;
-                };
+                const categorizedShapes = categorizeSussyShapes(sussyToolShapes);
                 const selectableShapesList = (
                     <InputGroup
                         className={classNames(
                             styles.modDashedBorder,
-                            styles.flexCenterer,
+                            styles.dropItemShapeToolMenu,
                             styles.dropdownMaxItemList
                         )}
                     >
-                        {selectableShapes.map(shape => (<LabeledIconButton
-                            className={classNames(styles.dropItemShapeTool)}
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={`data:image/svg+xml,${encodeURIComponent(generateShapeSVG(shape))}`}
-                            title={shape.name}
-                            onClick={() => changeFunction(shape.id)}
-                        />))}
+                        {Object.keys(categorizedShapes).map(categoryId => categorizedShapes[categoryId].length === 0 ?
+                            (<React.Fragment key={categoryId} />) : (<React.Fragment key={categoryId}>
+                                <p className={classNames(styles.dropItemShapeToolLabel)}>
+                                    {sussyToolCategories[categoryId]}
+                                </p>
+                                {categorizedShapes[categoryId].map(shape => (
+                                    <LabeledIconButton
+                                        key={shape.id}
+                                        className={classNames(styles.dropItemShapeTool)}
+                                        hideLabel={hideLabel(props.intl.locale)}
+                                        imgSrc={`data:image/svg+xml,${encodeURIComponent(generateSussyShapeSVG(shape))}`}
+                                        title={shape.name}
+                                        onClick={() => changeFunction(shape.id)}
+                                    />
+                                ))}
+                        </React.Fragment>))}
                     </InputGroup>
                 );
                 return (
@@ -397,12 +404,32 @@ const ModeToolsComponent = props => {
                             tipSize={.01}
                         >
                             <img
-                                src={`data:image/svg+xml,${encodeURIComponent(generateShapeSVG(selectedShapeObject))}`}
+                                src={`data:image/svg+xml,${encodeURIComponent(generateSussyShapeSVG(selectedShapeObject))}`}
                                 alt={selectedShapeObject.name}
                                 title={selectedShapeObject.name}
                                 height={16}
                             />
                         </Dropdown>
+                    </div>
+                );
+            }
+        case Modes.PEN:
+            {
+                const currentPenSimplifyValue = props.penSimplifyValue;
+                const changeFunctionSimplify = props.onPenSimplifySliderChange;
+                return (
+                    <div className={classNames(props.className, styles.modeTools)}>
+                        <Label text={props.intl.formatMessage(messages.eraserSimplify)}>
+                            <LiveInput
+                                range
+                                small
+                                max={1000}
+                                min="0"
+                                type="number"
+                                value={currentPenSimplifyValue}
+                                onSubmit={changeFunctionSimplify}
+                            />
+                        </Label>
                     </div>
                 );
             }
@@ -741,10 +768,12 @@ ModeToolsComponent.propTypes = {
     bitBrushSize: PropTypes.number,
     bitEraserSize: PropTypes.number,
     brushValue: PropTypes.number,
-    segValue: PropTypes.number,
+    simplifyValue: PropTypes.number,
     className: PropTypes.string,
     clipboardItems: PropTypes.arrayOf(PropTypes.array),
     eraserValue: PropTypes.number,
+    eraserSimplifyValue: PropTypes.number,
+    penSimplifyValue: PropTypes.number,
     roundedCornerValue: PropTypes.number,
     roundedRectCornerValue: PropTypes.number,
     trianglePolyValue: PropTypes.number,
@@ -759,11 +788,14 @@ ModeToolsComponent.propTypes = {
     onBitBrushSliderChange: PropTypes.func.isRequired,
     onBitEraserSliderChange: PropTypes.func.isRequired,
     onBrushSliderChange: PropTypes.func.isRequired,
+    onSimplifySliderChange: PropTypes.func.isRequired,
     onCopyToClipboard: PropTypes.func.isRequired,
     onCutToClipboard: PropTypes.func.isRequired,
     onCurvePoints: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
     onEraserSliderChange: PropTypes.func,
+    onEraserSimplifySliderChange: PropTypes.func,
+    onPenSimplifySliderChange: PropTypes.func,
     onFillShapes: PropTypes.func.isRequired,
     onFlipHorizontal: PropTypes.func.isRequired,
     onFlipVertical: PropTypes.func.isRequired,
@@ -787,9 +819,11 @@ const mapStateToProps = state => ({
     bitBrushSize: state.scratchPaint.bitBrushSize,
     bitEraserSize: state.scratchPaint.bitEraserSize,
     brushValue: state.scratchPaint.brushMode.brushSize,
-    segValue: state.scratchPaint.brushMode.segSize,
+    simplifyValue: state.scratchPaint.brushMode.simplifySize,
     clipboardItems: state.scratchPaint.clipboard.items,
     eraserValue: state.scratchPaint.eraserMode.brushSize,
+    eraserSimplifyValue: state.scratchPaint.eraserMode.simplifySize,
+    penSimplifyValue: state.scratchPaint.penMode.simplifySize,
     roundedRectCornerValue: state.scratchPaint.roundedRectMode.roundedCornerSize,
     roundedCornerValue: state.scratchPaint.rectMode.roundedCornerSize,
     trianglePolyValue: state.scratchPaint.triangleMode.trianglePolyCount,
@@ -800,8 +834,8 @@ const mapDispatchToProps = dispatch => ({
     onBrushSliderChange: brushSize => {
         dispatch(changeBrushSize(brushSize));
     },
-    onSegSliderChange: brushSize => {
-        dispatch(changeSegSize(brushSize));
+    onSimplifySliderChange: brushSize => {
+        dispatch(changeSimplifySize(brushSize));
     },
     onRoundedRectCornerSliderChange: roundedCornerSize => {
         dispatch(changeRoundedRectCornerSize(roundedCornerSize));
@@ -826,6 +860,12 @@ const mapDispatchToProps = dispatch => ({
     },
     onEraserSliderChange: eraserSize => {
         dispatch(changeEraserSize(eraserSize));
+    },
+    onEraserSimplifySliderChange: eraserSize => {
+        dispatch(changeEraserSimplifySize(eraserSize));
+    },
+    onPenSimplifySliderChange: eraserSize => {
+        dispatch(changePenSimplifySize(eraserSize));
     },
     onFillShapes: () => {
         dispatch(setShapesFilled(true));
