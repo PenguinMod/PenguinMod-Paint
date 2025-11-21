@@ -57,6 +57,7 @@ import shapeFilterIcon from './icons/filter.svg';
 import alignLeftIcon from './icons/alignLeft.svg';
 import alignRightIcon from './icons/alignRight.svg';
 import alignCenterIcon from './icons/alignCenter.svg';
+import textToShapesIcon from './icons/text-to-shapes.svg';
 import bitBrushIcon from '../bit-brush-mode/brush.svg';
 import bitEraserIcon from '../bit-eraser-mode/eraser.svg';
 import bitLineIcon from '../bit-line-mode/line.svg';
@@ -842,6 +843,13 @@ const ModeToolsComponent = props => {
                             imgSrc={alignRightIcon}
                             title={props.intl.formatMessage(messages.rightAlign)}
                             onClick={props.onTextAlignRight}
+                        />
+                    </InputGroup>
+                    <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                        <LabeledIconButton
+                            imgSrc={textToShapesIcon}
+                            title={'Convert'}
+                            onClick={props.onTextAlignLeft}
                         />
                     </InputGroup>
                 </div>
