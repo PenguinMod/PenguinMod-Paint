@@ -785,13 +785,13 @@ const ModeToolsComponent = props => {
                             onClick={props.onTextAlignRight}
                         />
                     </InputGroup>
-                    <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                    {(props.mode === Modes.TEXT) ? (<InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
                         <LabeledIconButton
                             imgSrc={textToShapesIcon}
                             title={'Convert'}
-                            onClick={props.onTextAlignLeft}
+                            onClick={props.onText2Path}
                         />
-                    </InputGroup>
+                    </InputGroup>) : null}
                 </div>
             );
         case Modes.BIT_RECT:
@@ -895,6 +895,7 @@ ModeToolsComponent.propTypes = {
     onPasteFromClipboard: PropTypes.func.isRequired,
     onPointPoints: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
+    onText2Path: PropTypes.func.isRequired,
 
     onMergeShape: PropTypes.func.isRequired,
     onMaskShape: PropTypes.func.isRequired,
