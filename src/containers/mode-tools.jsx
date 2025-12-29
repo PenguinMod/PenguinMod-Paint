@@ -47,7 +47,8 @@ class ModeTools extends React.Component {
             'handleSquareEnds',
             'handleMiterLineJoin',
             'handleRoundLineJoin',
-            'handleBevelLineJoin'
+            'handleBevelLineJoin',
+            'handleText2Path'
         ]);
 
         // defined when merging shapes
@@ -330,17 +331,52 @@ class ModeTools extends React.Component {
                     return;
                 }
 
-                const pathData = font.getPath(
-                    textNode.content, 0, 0,
-                    textNode.fontSize || 16
-                ).toPathData();
+                // Split text by lines, because opentype generates path in one line, ignoring \n
+                const textPath = textNode.content.split("\n")
+                    .map((line, i) => {
+                        const pathData = font.getPath(
+                            line, 0, textNode.leading * i,
+                            textNode.fontSize || 16
+                        ).toPathData();
+                        const compound = new paper.CompoundPath(pathData);
 
-                const compound = new paper.CompoundPath(pathData);
-                compound.fillColor = this.fillColor || "black";
-                compound.matrix = textNode.matrix.clone();
-                resolve(compound);
+                        // Copy styles of text node
+                        ["fillColor", "strokeColor", "strokeWidth", "strokeCap", "strokeJoin", "dashArray"]
+                            .forEach((param) => (compound[param] = textNode[param]));
+                        compound.matrix = textNode.matrix.clone();
+
+                        return compound;
+                    })
+                    .reduce((union, path) => {
+                        const result = union.unite(path);
+                        union.remove();
+                        path.remove();
+                        return result;
+                    });
+                resolve(textPath);
             });
         });
+    }
+
+    async handleText2Path () {
+        const selectedItems = getSelectedLeafItems();
+        for (let i = 0; i < selectedItems.length; i++) {
+            if (selectedItems[i].className === "PointText") {
+                const path = await this.convertText2Path(selectedItems[i]);
+
+                // Record indices
+                selectedItems[i].data.index = selectedItems[i].index;
+
+                // Group item
+                const itemGroup = new paper.Group(path);
+
+                // Remove path from group and insert at index of text node.
+                itemGroup.layer.insertChild(selectedItems[i].data.index, path);
+                selectedItems[i].data.index = null;
+                itemGroup.remove();
+            }
+        }
+        this.props.onUpdateImage();
     }
 
     async handleMergeShape (specificOperation) {
@@ -507,6 +543,7 @@ class ModeTools extends React.Component {
                 onMiterLineJoin={this.handleMiterLineJoin}
                 onRoundLineJoin={this.handleRoundLineJoin}
                 onBevelLineJoin={this.handleBevelLineJoin}
+                onText2Path={this.handleText2Path}
 
                 onMergeShape={this.handleMergeShape}
                 onMaskShape={this.handleMaskShape}
