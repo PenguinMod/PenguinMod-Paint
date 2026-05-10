@@ -2,7 +2,7 @@ import log from '../log/log';
 
 const CHANGE_TRIANGLE_SIDE_COUNT = 'scratch-paint/triangle-mode/CHANGE_TRIANGLE_SIDE_COUNT';
 const CHANGE_TRIANGLE_POINT_COUNT = 'scratch-paint/triangle-mode/CHANGE_TRIANGLE_POINT_COUNT';
-const initialState = { trianglePolyCount: 3, trianglePointCount: 1 };
+const initialState = { trianglePolyCount: 3, trianglePointCount: 0.5 };
 
 const reducer = function (state, action) {
     if (typeof state === 'undefined') state = initialState;
